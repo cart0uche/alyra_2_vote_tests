@@ -181,4 +181,106 @@ describe("Test register a proposal", function () {
          Voting.connect(voter1).addProposal("proposal0")
       ).to.be.revertedWith("You're not a voter");
    });
+
+   it("should revert if empty proposal", async function () {
+      await Voting.addVoter(voter1.address);
+      await Voting.addVoter(voter2.address);
+      await Voting.startProposalsRegistering();
+
+      await expect(Voting.connect(voter1).addProposal("")).to.be.revertedWith(
+         "Vous ne pouvez pas ne rien proposer"
+      );
+   });
+});
+
+describe("Test adding a vote", function () {
+   beforeEach(async function () {
+      [owner, voter1, voter2] = await ethers.getSigners();
+      Voting_Factory = await ethers.getContractFactory("Voting");
+      Voting = await Voting_Factory.deploy();
+   });
+
+   it("emit an event when a vote is added", async function () {
+      await Voting.addVoter(voter1.address);
+      await Voting.addVoter(voter2.address);
+      await Voting.startProposalsRegistering();
+      await Voting.connect(voter1).addProposal("description1");
+      await Voting.connect(voter2).addProposal("description2");
+      await Voting.endProposalsRegistering();
+      await Voting.startVotingSession();
+
+      await expect(await Voting.connect(voter1).setVote(0))
+         .to.emit(Voting, "Voted")
+         .withArgs(voter1.address, 0);
+
+      await expect(await Voting.connect(voter2).setVote(1))
+         .to.emit(Voting, "Voted")
+         .withArgs(voter2.address, 1);
+   });
+
+   it("should revert if a voter is not register", async function () {
+      await Voting.addVoter(voter1.address);
+      await Voting.startProposalsRegistering();
+      await Voting.connect(voter1).addProposal("description1");
+      await Voting.endProposalsRegistering();
+      await Voting.startVotingSession();
+
+      await expect(Voting.connect(voter2).setVote(0)).to.be.revertedWith(
+         "You're not a voter"
+      );
+   });
+
+   it("should revert if a voter vote twice", async function () {
+      await Voting.addVoter(voter1.address);
+      await Voting.startProposalsRegistering();
+      await Voting.connect(voter1).addProposal("description1");
+      await Voting.endProposalsRegistering();
+      await Voting.startVotingSession();
+
+      await Voting.connect(voter1).setVote(0);
+      await expect(Voting.connect(voter1).setVote(0)).to.be.revertedWith(
+         "You have already voted"
+      );
+   });
+
+   it("should revert if a voter vote for an unknown proposal", async function () {
+      await Voting.addVoter(voter1.address);
+      await Voting.startProposalsRegistering();
+      await Voting.connect(voter1).addProposal("description1");
+      await Voting.endProposalsRegistering();
+      await Voting.startVotingSession();
+
+      await expect(Voting.connect(voter1).setVote(2)).to.be.revertedWith(
+         "Proposal not found"
+      );
+
+      await expect(Voting.connect(voter1).setVote(3)).to.be.revertedWith(
+         "Proposal not found"
+      );
+   });
+
+   it("should revert if not in a vote session", async function () {
+      await Voting.addVoter(voter1.address);
+      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
+         "Voting session havent started yet"
+      );
+      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
+         "Voting session havent started yet"
+      );
+      await Voting.startProposalsRegistering();
+      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
+         "Voting session havent started yet"
+      );
+      await Voting.connect(voter1).addProposal("description1");
+      await Voting.endProposalsRegistering();
+      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
+         "Voting session havent started yet"
+      );
+      await Voting.startVotingSession();
+      await Voting.endVotingSession();
+
+      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
+         "Voting session havent started yet"
+      );
+   });
 });
