@@ -126,3 +126,59 @@ describe("Test register voters", function () {
       );
    });
 });
+
+describe("Test register a proposal", function () {
+   beforeEach(async function () {
+      [owner, voter1, voter2] = await ethers.getSigners();
+      Voting_Factory = await ethers.getContractFactory("Voting");
+      Voting = await Voting_Factory.deploy();
+   });
+
+   it("emit an event when a proposal is added", async function () {
+      await Voting.addVoter(voter1.address);
+      await Voting.addVoter(voter2.address);
+      await Voting.startProposalsRegistering();
+
+      await expect(await Voting.connect(voter1).addProposal("proposal1"))
+         .to.emit(Voting, "ProposalRegistered")
+         .withArgs(1);
+      const proposalId1 = await Voting.connect(voter1).getOneProposal(1);
+      expect(proposalId1.description).to.be.equal("proposal1");
+
+      await expect(await Voting.connect(voter2).addProposal("proposal2"))
+         .to.emit(Voting, "ProposalRegistered")
+         .withArgs(2);
+      const proposalId2 = await Voting.connect(voter1).getOneProposal(2);
+      expect(proposalId2.description).to.be.equal("proposal2");
+   });
+
+   it("should revert if not in a proposal register session", async function () {
+      await Voting.addVoter(voter1.address);
+
+      await Voting.startProposalsRegistering();
+      await Voting.connect(voter1).addProposal("proposal0");
+
+      await Voting.endProposalsRegistering();
+      await expect(
+         Voting.connect(voter1).addProposal("proposal0")
+      ).to.be.revertedWith("Proposals are not allowed yet");
+
+      await Voting.startVotingSession();
+      await expect(
+         Voting.connect(voter1).addProposal("proposal0")
+      ).to.be.revertedWith("Proposals are not allowed yet");
+
+      await Voting.endVotingSession();
+      await expect(
+         Voting.connect(voter1).addProposal("proposal0")
+      ).to.be.revertedWith("Proposals are not allowed yet");
+   });
+
+   it("should revert if a voter is not register", async function () {
+      await Voting.startProposalsRegistering();
+
+      await expect(
+         Voting.connect(voter1).addProposal("proposal0")
+      ).to.be.revertedWith("You're not a voter");
+   });
+});
