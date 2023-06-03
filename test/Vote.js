@@ -74,3 +74,55 @@ describe("Test workflow", function () {
       );
    });
 });
+
+describe("Test register voters", function () {
+   beforeEach(async function () {
+      [owner, voter1] = await ethers.getSigners();
+      Voting_Factory = await ethers.getContractFactory("Voting");
+      Voting = await Voting_Factory.deploy();
+   });
+
+   it("emit an event when a voter is added", async function () {
+      await expect(await Voting.addVoter(voter1.address))
+         .to.emit(Voting, "VoterRegistered")
+         .withArgs(voter1.address);
+   });
+
+   it("sould revert if not in a RegisteringVoters session", async function () {
+      expect(await Voting.workflowStatus()).to.equal(RegisteringVoters);
+      await Voting.addVoter(voter1.address);
+
+      await Voting.startProposalsRegistering();
+      await expect(Voting.addVoter(voter1.address)).to.be.revertedWith(
+         "Voters registration is not open yet"
+      );
+
+      await Voting.endProposalsRegistering();
+      await expect(Voting.addVoter(voter1.address)).to.be.revertedWith(
+         "Voters registration is not open yet"
+      );
+
+      await Voting.startVotingSession();
+      await expect(Voting.addVoter(voter1.address)).to.be.revertedWith(
+         "Voters registration is not open yet"
+      );
+
+      await Voting.endVotingSession();
+      await expect(Voting.addVoter(voter1.address)).to.be.revertedWith(
+         "Voters registration is not open yet"
+      );
+   });
+
+   it("should revert if not called by owner", async function () {
+      await expect(
+         Voting.connect(voter1).addVoter(voter1.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+   });
+
+   it("sould revert if a voter is already registered", async function () {
+      await Voting.addVoter(voter1.address);
+      await expect(Voting.addVoter(voter1.address)).to.be.revertedWith(
+         "Already registered"
+      );
+   });
+});
