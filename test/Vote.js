@@ -134,16 +134,16 @@ describe("Test register voters", function () {
 
 describe("Test register a proposal", function () {
    beforeEach(async function () {
-      [owner, voter1, voter2] = await ethers.getSigners();
+      [owner, voter1, voter2, voter3] = await ethers.getSigners();
       Voting_Factory = await ethers.getContractFactory("Voting");
       Voting = await Voting_Factory.deploy();
-   });
 
-   it("emit an event when a proposal is added", async function () {
       await Voting.addVoter(voter1.address);
       await Voting.addVoter(voter2.address);
       await Voting.startProposalsRegistering();
+   });
 
+   it("emit an event when a proposal is added", async function () {
       await expect(await Voting.connect(voter1).addProposal("proposal1"))
          .to.emit(Voting, "ProposalRegistered")
          .withArgs(1);
@@ -158,9 +158,6 @@ describe("Test register a proposal", function () {
    });
 
    it("should revert if not in a proposal register session", async function () {
-      await Voting.addVoter(voter1.address);
-
-      await Voting.startProposalsRegistering();
       await Voting.connect(voter1).addProposal("proposal0");
 
       await Voting.endProposalsRegistering();
@@ -180,18 +177,12 @@ describe("Test register a proposal", function () {
    });
 
    it("should revert if a voter is not register", async function () {
-      await Voting.startProposalsRegistering();
-
       await expect(
-         Voting.connect(voter1).addProposal("proposal0")
+         Voting.connect(voter3).addProposal("proposal0")
       ).to.be.revertedWith("You're not a voter");
    });
 
    it("should revert if empty proposal", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.addVoter(voter2.address);
-      await Voting.startProposalsRegistering();
-
       await expect(Voting.connect(voter1).addProposal("")).to.be.revertedWith(
          "Vous ne pouvez pas ne rien proposer"
       );
@@ -200,12 +191,10 @@ describe("Test register a proposal", function () {
 
 describe("Test adding a vote", function () {
    beforeEach(async function () {
-      [owner, voter1, voter2] = await ethers.getSigners();
+      [owner, voter1, voter2, voter3] = await ethers.getSigners();
       Voting_Factory = await ethers.getContractFactory("Voting");
       Voting = await Voting_Factory.deploy();
-   });
 
-   it("emit an event when a vote is added", async function () {
       await Voting.addVoter(voter1.address);
       await Voting.addVoter(voter2.address);
       await Voting.startProposalsRegistering();
@@ -213,7 +202,9 @@ describe("Test adding a vote", function () {
       await Voting.connect(voter2).addProposal("description2");
       await Voting.endProposalsRegistering();
       await Voting.startVotingSession();
+   });
 
+   it("emit an event when a vote is added", async function () {
       await expect(await Voting.connect(voter1).setVote(0))
          .to.emit(Voting, "Voted")
          .withArgs(voter1.address, 0);
@@ -224,24 +215,12 @@ describe("Test adding a vote", function () {
    });
 
    it("should revert if a voter is not register", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("description1");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
-      await expect(Voting.connect(voter2).setVote(0)).to.be.revertedWith(
+      await expect(Voting.connect(voter3).setVote(0)).to.be.revertedWith(
          "You're not a voter"
       );
    });
 
    it("should revert if a voter vote twice", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("description1");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
       await Voting.connect(voter1).setVote(0);
       await expect(Voting.connect(voter1).setVote(0)).to.be.revertedWith(
          "You have already voted"
@@ -249,39 +228,12 @@ describe("Test adding a vote", function () {
    });
 
    it("should revert if a voter vote for an unknown proposal", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("description1");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
-      await expect(Voting.connect(voter1).setVote(2)).to.be.revertedWith(
-         "Proposal not found"
-      );
-
-      await expect(Voting.connect(voter1).setVote(3)).to.be.revertedWith(
+      await expect(Voting.connect(voter1).setVote(4)).to.be.revertedWith(
          "Proposal not found"
       );
    });
 
    it("should revert if not in a vote session", async function () {
-      await Voting.addVoter(voter1.address);
-      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
-         "Voting session havent started yet"
-      );
-      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
-         "Voting session havent started yet"
-      );
-      await Voting.startProposalsRegistering();
-      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
-         "Voting session havent started yet"
-      );
-      await Voting.connect(voter1).addProposal("description1");
-      await Voting.endProposalsRegistering();
-      await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
-         "Voting session havent started yet"
-      );
-      await Voting.startVotingSession();
       await Voting.endVotingSession();
 
       await expect(Voting.connect(voter1).setVote(1)).to.be.revertedWith(
@@ -296,18 +248,21 @@ describe("Test count votes", function () {
          await ethers.getSigners();
       Voting_Factory = await ethers.getContractFactory("Voting");
       Voting = await Voting_Factory.deploy();
-   });
 
-   it("should revert if not called by owner", async function () {
       await Voting.addVoter(voter1.address);
       await Voting.addVoter(voter2.address);
+      await Voting.addVoter(voter3.address);
+      await Voting.addVoter(voter4.address);
       await Voting.startProposalsRegistering();
       await Voting.connect(voter1).addProposal("description1");
       await Voting.connect(voter2).addProposal("description2");
+      await Voting.connect(voter3).addProposal("description3");
+      await Voting.connect(voter4).addProposal("description4");
       await Voting.endProposalsRegistering();
       await Voting.startVotingSession();
+   });
 
-      await Voting.connect(voter1).setVote(0);
+   it("should revert if not called by owner", async function () {
       await Voting.endVotingSession();
       await expect(Voting.connect(voter1).tallyVotes()).to.be.revertedWith(
          "Ownable: caller is not the owner"
@@ -315,12 +270,6 @@ describe("Test count votes", function () {
    });
 
    it("should revert if vote session not ended", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("description1");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
       await Voting.connect(voter1).setVote(0);
 
       await expect(Voting.tallyVotes()).to.be.revertedWith(
@@ -329,12 +278,6 @@ describe("Test count votes", function () {
    });
 
    it("count vote, 1 vote for proposal1", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("proposal1");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
       await Voting.connect(voter1).setVote(1);
       await Voting.endVotingSession();
 
@@ -344,16 +287,6 @@ describe("Test count votes", function () {
    });
 
    it("count vote, 1 vote for proposal1, 2 vote for proposal2", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.addVoter(voter2.address);
-      await Voting.addVoter(voter3.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("proposal1");
-      await Voting.connect(voter2).addProposal("proposal2");
-      await Voting.connect(voter3).addProposal("proposal3");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
       await Voting.connect(voter1).setVote(1);
       await Voting.connect(voter2).setVote(2);
       await Voting.connect(voter3).setVote(2);
@@ -365,16 +298,6 @@ describe("Test count votes", function () {
    });
 
    it("count vote, 2 vote for proposal1, 1 vote for proposal2", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.addVoter(voter2.address);
-      await Voting.addVoter(voter3.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("proposal1");
-      await Voting.connect(voter2).addProposal("proposal2");
-      await Voting.connect(voter3).addProposal("proposal3");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
       await Voting.connect(voter1).setVote(1);
       await Voting.connect(voter2).setVote(1);
       await Voting.connect(voter3).setVote(2);
@@ -386,18 +309,6 @@ describe("Test count votes", function () {
    });
 
    it("count vote, 1 vote for proposal1, 2 vote for proposal2, 1 vote for proposal3", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.addVoter(voter2.address);
-      await Voting.addVoter(voter3.address);
-      await Voting.addVoter(voter4.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("proposal1");
-      await Voting.connect(voter2).addProposal("proposal2");
-      await Voting.connect(voter3).addProposal("proposal3");
-      await Voting.connect(voter4).addProposal("proposal4");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
       await Voting.connect(voter1).setVote(1);
       await Voting.connect(voter2).setVote(2);
       await Voting.connect(voter3).setVote(2);
