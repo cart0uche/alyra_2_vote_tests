@@ -48,7 +48,7 @@ jobs:
               key: npm-v2-${{ hashFiles('**/package-lock.json') }}
               restore-keys: npm-v2-
          - name: Test
-           run: npx hardhat coverage
+           run: npx hardhat test
            env:
               NODE_OPTIONS: --max_old_space_size=4096
          - name: Codecov
