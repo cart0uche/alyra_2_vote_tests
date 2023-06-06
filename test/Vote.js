@@ -298,7 +298,7 @@ describe("Test count votes", function () {
       Voting = await Voting_Factory.deploy();
    });
 
-   it("fails if not called by owner", async function () {
+   it("should revert if not called by owner", async function () {
       await Voting.addVoter(voter1.address);
       await Voting.addVoter(voter2.address);
       await Voting.startProposalsRegistering();
@@ -314,7 +314,7 @@ describe("Test count votes", function () {
       );
    });
 
-   it("fails if vote session not ended", async function () {
+   it("should revert if vote session not ended", async function () {
       await Voting.addVoter(voter1.address);
       await Voting.startProposalsRegistering();
       await Voting.connect(voter1).addProposal("description1");
@@ -383,30 +383,6 @@ describe("Test count votes", function () {
       await Voting.tallyVotes();
       const result = await Voting.winningProposalID();
       expect(result).to.be.equal(new BN(1));
-   });
-
-   it("count vote, 1 vote for proposal1, 2 vote for proposal2, 1 vote for proposal3", async function () {
-      await Voting.addVoter(voter1.address);
-      await Voting.addVoter(voter2.address);
-      await Voting.addVoter(voter3.address);
-      await Voting.addVoter(voter4.address);
-      await Voting.startProposalsRegistering();
-      await Voting.connect(voter1).addProposal("proposal1");
-      await Voting.connect(voter2).addProposal("proposal2");
-      await Voting.connect(voter3).addProposal("proposal3");
-      await Voting.connect(voter4).addProposal("proposal4");
-      await Voting.endProposalsRegistering();
-      await Voting.startVotingSession();
-
-      await Voting.connect(voter1).setVote(1);
-      await Voting.connect(voter2).setVote(2);
-      await Voting.connect(voter3).setVote(2);
-      await Voting.connect(voter4).setVote(3);
-      await Voting.endVotingSession();
-
-      await Voting.tallyVotes();
-      const result = await Voting.winningProposalID();
-      expect(result).to.be.equal(new BN(2));
    });
 
    it("count vote, 1 vote for proposal1, 2 vote for proposal2, 1 vote for proposal3", async function () {
