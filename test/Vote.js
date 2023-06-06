@@ -78,7 +78,7 @@ describe("Test workflow", function () {
 
 describe("Test register voters", function () {
    beforeEach(async function () {
-      [owner, voter1] = await ethers.getSigners();
+      [owner, voter1, voter2] = await ethers.getSigners();
       Voting_Factory = await ethers.getContractFactory("Voting");
       Voting = await Voting_Factory.deploy();
    });
@@ -129,6 +129,13 @@ describe("Test register voters", function () {
       await expect(Voting.addVoter(voter1.address)).to.be.revertedWith(
          "Already registered"
       );
+   });
+
+   it("sould revert if a non voter call getVoter", async function () {
+      await Voting.addVoter(voter1.address);
+      await expect(
+         Voting.connect(voter2).getVoter(voter1.address)
+      ).to.be.revertedWith("You're not a voter");
    });
 });
 
@@ -185,6 +192,12 @@ describe("Test register a proposal", function () {
    it("should revert if empty proposal", async function () {
       await expect(Voting.connect(voter1).addProposal("")).to.be.revertedWith(
          "Vous ne pouvez pas ne rien proposer"
+      );
+   });
+
+   it("should revert if a non voter call getOneProposal", async function () {
+      await expect(Voting.connect(voter3).getOneProposal(0)).to.be.revertedWith(
+         "You're not a voter"
       );
    });
 });
