@@ -13,14 +13,10 @@
 
 ## Presentation
 
----
-
 Ce projet fait suite aux cours Alyra portant sur les tests unitaires d'un code Solidity.
 Les tests sont réalisés sur la correction du projet 1 du système de Vote.
 
 ## Technologie
-
----
 
 Versions des outils utilisés :
 
@@ -49,8 +45,6 @@ npx hardhat coverage
 ```
 
 ## Stratégie de test
-
----
 
 Les tests couvrent 100% des instructions/branches/fonctions/lignes
 ![](capture.png)
