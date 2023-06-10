@@ -1,7 +1,5 @@
 # Projet Alyra 2 : Tests unitaires
 
----
-
 ## Table of Contents
 
 -  [Projet Alyra 2 : Tests unitaires](#projet-alyra-2--tests-unitaires)
