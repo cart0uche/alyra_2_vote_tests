@@ -46,6 +46,7 @@ npx hardhat coverage
 
 Les tests couvrent 100% des instructions/branches/fonctions/lignes
 ![](capture.png)
+
 Les suites de tests sont divisés en 4 groupes (describe) pour vérifier le fonctionnement de chaque étape du workflow de Vote:
 
 -  L'enregistrement des votants (Test register voters)
