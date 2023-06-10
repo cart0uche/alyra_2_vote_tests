@@ -8,6 +8,7 @@
    -  [Technologie](#technologie)
    -  [Installation](#installation)
    -  [Stratégie de test](#stratégie-de-test)
+   -  [CI/CD](#cicd)
 
 ## Presentation
 
@@ -55,3 +56,13 @@ Les suites de tests sont divisés en 4 groupes (describe) pour vérifier le fonc
 -  Le compte des votes (Test count votes)
 
 Un cinquième groupe permet de vérifier le fonctionnement du workflow (Test workflow)
+
+## CI/CD
+
+J'ai ajouté un fichier test.yaml dans ./github/worflows/ qui permet d'utiliser la CI de github. Les étapes du job sont
+
+-  Checkout des sources
+-  Setup de l'environnement (node)
+-  Installation des dépendances (via npm)
+-  Execution des tests
+-  Upload de la couverture de tests sur [Codecov](https://app.codecov.io/github/cart0uche/alyra_2_vote_tests/blob/main/contracts%2FVote.sol)
